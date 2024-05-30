@@ -122,6 +122,10 @@ def sync(config, state, catalog):
                 state[stream.tap_stream_id] = {'modified_since': t_file['last_modified'].isoformat()}
                 singer.write_state(state)
 
+            # Write final state, even if not updated.
+            # This is important for ensuring that the state isn't emptied if no records are processed.
+            singer.write_state(state)
+
             LOGGER.info(f'Wrote {records_streamed} records for stream "{stream.tap_stream_id}".')
         else:
             LOGGER.warn(f'Skipping processing for stream [{stream.tap_stream_id}] without a config block.')
