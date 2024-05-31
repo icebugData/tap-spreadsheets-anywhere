@@ -1,13 +1,14 @@
 import dateutil
 import pytz
 import logging
-from copy import deepcopy
+import pickle
+from collections.abc import MutableMapping
 
 LOGGER = logging.getLogger(__name__)
 
 
 def convert_row(row, schema):
-    t_schema = deepcopy(schema)
+    t_schema = pickle.loads(pickle.dumps(schema))
     to_return = {}
     for key, value in row.items():
         if key in t_schema['properties']:
@@ -71,6 +72,13 @@ def convert(datum, desired_type=None):
         except (ValueError, TypeError):
             pass
 
+    if desired_type in (None, 'object'):
+        try:
+            if isinstance(datum, MutableMapping):
+                return datum, 'object'
+        except (ValueError, TypeError):
+            pass
+
     return str(datum), 'string',
 
 
@@ -117,6 +125,8 @@ def pick_datatype(counts,prefer_number_vs_integer=False):
             to_return = 'number'
         elif counts.get('date-time', 0) > 0:
             to_return = 'date-time'
+        elif counts.get('object', 0) > 0:
+            to_return = 'object'
         elif counts.get('string', 0) <= 0:
             LOGGER.warning(f"Unexpected data type encountered in histogram {counts}. Defaulting type to String.")
 
@@ -130,23 +140,28 @@ def pick_datatype(counts,prefer_number_vs_integer=False):
     return to_return
 
 
-def generate_schema(samples,prefer_number_vs_integer=False):
+def generate_schema(samples,prefer_number_vs_integer=False, prefer_schema_as_string=False):
     to_return = {}
     counts = count_samples(samples)
 
     for key, value in counts.items():
-        datatype = pick_datatype(value,prefer_number_vs_integer)
-        # if "survey_responses_count" == key:
-        #     LOGGER.error(f"Key '{key}' held {value} and was typed as {datatype} with prefer_number_vs_integer={prefer_number_vs_integer}")
-
-        if datatype == 'date-time':
+        if(prefer_schema_as_string):
             to_return[key] = {
-                'type': ['null', 'string'],
-                'format': 'date-time',
+                'type':['null','string']
             }
         else:
-            to_return[key] = {
-                'type': ['null', datatype],
-            }
+            datatype = pick_datatype(value,prefer_number_vs_integer)
+            # if "survey_responses_count" == key:
+            #     LOGGER.error(f"Key '{key}' held {value} and was typed as {datatype} with prefer_number_vs_integer={prefer_number_vs_integer}")
+
+            if datatype == 'date-time':
+                to_return[key] = {
+                    'type': ['null', 'string'],
+                    'format': 'date-time',
+                }
+            else:
+                to_return[key] = {
+                    'type': ['null', datatype],
+                }
 
     return to_return

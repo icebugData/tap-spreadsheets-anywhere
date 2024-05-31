@@ -12,9 +12,11 @@ CONFIG_CONTRACT = Schema({
         Required('pattern'): str,
         Required('start_date'): str,
         Required('key_properties'): [str],
-        Required('format'): Any('csv', 'excel', 'json', 'detect'),
+        Required('format'): Any('csv', 'excel', 'json', 'jsonl', 'detect'),
+        Optional('encoding'): str,
         Optional('invalid_format_action'): Any('ignore','fail'),
         Optional('universal_newlines'): bool,
+        Optional('skip_initial'): int,
         Optional('selected'): bool,
         Optional('field_names'): [str],
         Optional('search_prefix'): str,
@@ -27,10 +29,11 @@ CONFIG_CONTRACT = Schema({
         Optional('max_records_per_run'): int,
         Optional('max_sampled_files'): int,
         Optional('prefer_number_vs_integer'): bool,
+        Optional('prefer_schema_as_string'): bool,
         Optional('schema_overrides'): {
             str: {
-                Required('type'): Any(Any('null','string','integer','number','date-time'),
-                                      [Any('null','string','integer','number','date-time')])
+                Required('type'): Any(Any('null','string','integer','number','date-time','object'),
+                                      [Any('null','string','integer','number','date-time','object')])
             }
         }
     }]
