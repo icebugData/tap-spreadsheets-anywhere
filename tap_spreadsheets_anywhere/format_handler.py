@@ -51,7 +51,7 @@ def get_streamreader(
         newline=newline,
         errors="surrogateescape",
         encoding=encoding,
-        limit=OUTPUT_BUFFER_SIZE,
+        buffering=OUTPUT_BUFFER_SIZE,
         **kwargs,
     )
 
